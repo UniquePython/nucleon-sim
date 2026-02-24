@@ -10,7 +10,7 @@
 #define HEIGHT 600
 #define FPS 60
 #define RADIUS 5
-#define NUM_NUCLEONS 30
+#define NUM_NUCLEONS 100
 #define SPEED 20
 
 
@@ -23,6 +23,7 @@ typedef struct s_vec2
 
 typedef enum e_charge {
     CHARGE_NEGATIVE = -1,
+	CHARGE_NEUTRAL = 0,
     CHARGE_POSITIVE = 1
 } Charge;
 
@@ -102,7 +103,22 @@ void InitNucleons(void)
 		nucleons[i].velocity.y = GetRandomValue(-SPEED, SPEED);
 		nucleons[i].force.x = 0;
 		nucleons[i].force.y = 0;
-		nucleons[i].charge = CHARGE_POSITIVE;
+
+		int rand = GetRandomValue(-1,1);
+		switch (rand)
+		{
+			case -1:
+				nucleons[i].charge = CHARGE_NEGATIVE;
+				break;
+			
+			case 0:
+				nucleons[i].charge = CHARGE_NEUTRAL;
+				break;
+			
+			case 1:
+				nucleons[i].charge = CHARGE_POSITIVE;
+				break;
+		}
 	}
 }
 
@@ -185,7 +201,20 @@ void DrawNucleons(void)
 	Color color;
 	for (int i = 0; i < NUM_NUCLEONS; i++)
 	{
-		color = nucleons[i].charge == CHARGE_POSITIVE ? BLUE : RED;
+		switch (nucleons[i].charge)
+		{
+			case CHARGE_NEGATIVE:
+				color = RED;
+				break;
+			
+			case CHARGE_NEUTRAL:
+				color = BLUE;
+				break;
+			
+			case CHARGE_POSITIVE:
+				color = GREEN;
+				break;
+		}
 		DrawCircle(nucleons[i].position.x, nucleons[i].position.y, nucleons[i].radius, color);
 	}
 }
