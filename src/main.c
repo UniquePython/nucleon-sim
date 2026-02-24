@@ -36,8 +36,12 @@ typedef struct s_nucleon
 
 // --- PROTOTYPES ------------>
 
+Vec2 Subtract(Vec2 a, Vec2 b);
+float Dot(Vec2 a, Vec2 b);
+
 void InitNucleons();
 void DrawNucleons();
+void ComputeForces();
 
 
 // --- ENTRY POINT ------------>
@@ -55,6 +59,7 @@ int main(void)
 	{
 		BeginDrawing();
 			ClearBackground(BLACK);
+			ComputeForces();
 			DrawNucleons();
 		EndDrawing();
 	}
@@ -66,6 +71,19 @@ int main(void)
 
 
 // --- IMPLEMENTATIONS ------------>
+
+Vec2 Subtract(Vec2 a, Vec2 b)
+{
+	Vec2 res;
+	res.x = a.x - b.x;
+	res.y = a.y - b.y;
+	return res;
+}
+
+float Dot(Vec2 a, Vec2 b)
+{
+    return a.x * a.x + a.y * a.y;
+}
 
 void InitNucleons()
 {
@@ -89,5 +107,34 @@ void DrawNucleons()
 	{
 		color = nucleons[i].charge == CHARGE_POSITIVE ? BLUE : RED;
 		DrawCircle(nucleons[i].position.x, nucleons[i].position.y, nucleons[i].radius, color);
+	}
+}
+
+void ComputeForces()
+{
+	Nucleon *self, *other;
+
+	for (int i = 0; i < NUM_NUCLEONS; i++)
+	{
+		self = &nucleons[i];
+
+		for (int j = i+1; j < NUM_NUCLEONS; j++)
+		{
+			other = &nucleons[j];
+
+			Vec2  delta            = Subtract(other->position, self->position);
+			float distance_squared = Dot(delta, delta);
+			if (distance_squared < 1.0f) distance_squared = 1.0f;
+			float inv_distance = 1.0f / sqrtf(distance_squared);
+			Vec2 normal = { delta.x * inv_distance, delta.y * inv_distance };
+
+			float coulomb = self->charge * other->charge / distance_squared;
+
+			self->force.x += coulomb * normal.x;
+			self->force.y += coulomb * normal.y;
+
+			other->force.x -= coulomb * normal.x;
+			other->force.y -= coulomb * normal.y;
+		}
 	}
 }
