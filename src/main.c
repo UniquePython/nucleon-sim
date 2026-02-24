@@ -43,6 +43,7 @@ void InitNucleons(void);
 void ZeroOutForces(void);
 void ComputeForces(void);
 void UpdatePositions(float);
+void CollideWithWalls(void);
 void DrawNucleons(void);
 
 
@@ -64,6 +65,7 @@ int main(void)
 			ZeroOutForces();
 			ComputeForces();
 			UpdatePositions(GetFrameTime());
+			CollideWithWalls();
 			DrawNucleons();
 		EndDrawing();
 	}
@@ -147,6 +149,34 @@ void UpdatePositions(float dt)
 
 		nucleons[i].position.x += nucleons[i].velocity.x * dt;
 		nucleons[i].position.y += nucleons[i].velocity.y * dt;
+	}
+}
+
+void CollideWithWalls(void)
+{
+	for (int i = 0; i < NUM_NUCLEONS; i++)
+	{
+		if (nucleons[i].position.x < nucleons[i].radius)
+		{
+			nucleons[i].position.x = nucleons[i].radius;
+			nucleons[i].velocity.x = -nucleons[i].velocity.x;
+		}
+		if (nucleons[i].position.y < nucleons[i].radius)
+		{
+			nucleons[i].position.y = nucleons[i].radius;
+			nucleons[i].velocity.y = -nucleons[i].velocity.y;
+		}
+
+		if (nucleons[i].position.x > WIDTH - nucleons[i].radius)
+		{
+			nucleons[i].position.x = WIDTH - nucleons[i].radius;
+			nucleons[i].velocity.x = -nucleons[i].velocity.x;
+		}
+		if (nucleons[i].position.y > HEIGHT - nucleons[i].radius)
+		{
+			nucleons[i].position.y = HEIGHT - nucleons[i].radius;
+			nucleons[i].velocity.y = -nucleons[i].velocity.y;
+		}
 	}
 }
 
