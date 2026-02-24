@@ -6,19 +6,20 @@
 
 // --- CONSTANTS ------------>
 
-#define WIDTH 900
-#define HEIGHT 600
+#define WIDTH 1500
+#define HEIGHT 1000
 #define FPS 60
 #define RADIUS 5
-#define NUM_NUCLEONS 100
-#define SPEED 20
+#define NUM_NUCLEONS 500
+#define DISTANCE_SCALE 1e-15
+#define TIME_SCALE 2e-22
 
 
 // --- STRUCTURES ------------>
 
 typedef struct s_vec2
 {
-	float x, y;
+	double x, y;
 } Vec2;
 
 typedef enum e_charge {
@@ -30,21 +31,23 @@ typedef enum e_charge {
 typedef struct s_nucleon
 {
 	Vec2 position, velocity, force;
-	float radius;
+	double radius;
 	Charge charge;
-	float mass;
+	double mass;
 } Nucleon;
 
 
 // --- PROTOTYPES ------------>
 
 Vec2 Subtract(Vec2, Vec2);
-float Dot(Vec2, Vec2);
+double Dot(Vec2, Vec2);
+
+double ChargeToCoulombs(Charge);
 
 void InitNucleons(void);
 void ZeroOutForces(void);
 void ComputeForces(void);
-void UpdatePositions(float);
+void UpdatePositions(double);
 void CollideWithWalls(void);
 void DrawNucleons(void);
 
@@ -88,9 +91,19 @@ Vec2 Subtract(Vec2 a, Vec2 b)
 	return res;
 }
 
-float Dot(Vec2 a, Vec2 b)
+double Dot(Vec2 a, Vec2 b)
 {
     return a.x * b.x + a.y * b.y;
+}
+
+double ChargeToCoulombs(Charge c)
+{
+    switch(c)
+    {
+        case CHARGE_NEGATIVE: return -1.602e-19;
+        case CHARGE_NEUTRAL:  return 0.0;
+        case CHARGE_POSITIVE: return 1.602e-19;
+    }
 }
 
 void InitNucleons(void)
@@ -100,10 +113,8 @@ void InitNucleons(void)
 		nucleons[i].radius = RADIUS;
 		nucleons[i].position.x = GetRandomValue(RADIUS, WIDTH-RADIUS);
 		nucleons[i].position.y = GetRandomValue(RADIUS, HEIGHT-RADIUS);
-		nucleons[i].velocity.x = GetRandomValue(-SPEED, SPEED);
-		nucleons[i].velocity.y = GetRandomValue(-SPEED, SPEED);
-		nucleons[i].force.x = 0;
-		nucleons[i].force.y = 0;
+		nucleons[i].velocity = (Vec2){0, 0};
+		nucleons[i].force = (Vec2){0, 0};
 
 		int rand = GetRandomValue(-1,1);
 		switch (rand)
@@ -124,15 +135,15 @@ void InitNucleons(void)
 		switch (nucleons[i].charge)
 		{
 			case CHARGE_NEGATIVE:
-				nucleons[i].mass = 1;
+				nucleons[i].mass = 9.109e-31;
 				break;
 			
 			case CHARGE_NEUTRAL:
-				nucleons[i].mass = 1838;
+				nucleons[i].mass = 1.675e-27;
 				break;
 			
 			case CHARGE_POSITIVE:
-				nucleons[i].mass = 1836;
+				nucleons[i].mass = 1.673e-27;
 				break;
 		}
 	}
@@ -155,13 +166,15 @@ void ComputeForces(void)
 		{
 			other = &nucleons[j];
 
-			Vec2  delta            = Subtract(other->position, self->position);
-			float distance_squared = Dot(delta, delta);
-			if (distance_squared < 1.0f) distance_squared = 1.0f;
-			float inv_distance = 1.0f / sqrtf(distance_squared);
-			Vec2 normal = { delta.x * inv_distance, delta.y * inv_distance };
+			Vec2 delta_pixels = Subtract(self->position, other->position);
+			Vec2 delta_meters = { delta_pixels.x * DISTANCE_SCALE, delta_pixels.y * DISTANCE_SCALE };
+			double distance_squared = Dot(delta_meters, delta_meters);
+			if (distance_squared < 1e-30) distance_squared = 1e-30;
+			double inv_distance = 1.0 / sqrt(distance_squared);
+			Vec2 normal = { delta_meters.x * inv_distance, delta_meters.y * inv_distance };
 
-			float coulomb = self->charge * other->charge / distance_squared;
+			double k_e = 8.988e9;
+			double coulomb = k_e * ChargeToCoulombs(self->charge) * ChargeToCoulombs(other->charge) / distance_squared;
 
 			self->force.x += coulomb * normal.x;
 			self->force.y += coulomb * normal.y;
@@ -172,15 +185,15 @@ void ComputeForces(void)
 	}
 }
 
-void UpdatePositions(float dt)
+void UpdatePositions(double dt)
 {
 	for (int i = 0; i < NUM_NUCLEONS; i++)
 	{
-		nucleons[i].velocity.x += (nucleons[i].force.x / nucleons[i].mass) * dt;
-		nucleons[i].velocity.y += (nucleons[i].force.y / nucleons[i].mass) * dt;
+		nucleons[i].velocity.x += (nucleons[i].force.x / nucleons[i].mass) * dt * TIME_SCALE;
+		nucleons[i].velocity.y += (nucleons[i].force.y / nucleons[i].mass) * dt * TIME_SCALE;
 
-		nucleons[i].position.x += nucleons[i].velocity.x * dt;
-		nucleons[i].position.y += nucleons[i].velocity.y * dt;
+		nucleons[i].position.x += (nucleons[i].velocity.x * dt * TIME_SCALE) / DISTANCE_SCALE;
+		nucleons[i].position.y += (nucleons[i].velocity.y * dt * TIME_SCALE) / DISTANCE_SCALE;
 	}
 }
 
@@ -231,6 +244,6 @@ void DrawNucleons(void)
 				color = GREEN;
 				break;
 		}
-		DrawCircle(nucleons[i].position.x, nucleons[i].position.y, nucleons[i].radius, color);
+		DrawCircle((float)nucleons[i].position.x, (float)nucleons[i].position.y, nucleons[i].radius, color);
 	}
 }
