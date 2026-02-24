@@ -36,12 +36,14 @@ typedef struct s_nucleon
 
 // --- PROTOTYPES ------------>
 
-Vec2 Subtract(Vec2 a, Vec2 b);
-float Dot(Vec2 a, Vec2 b);
+Vec2 Subtract(Vec2, Vec2);
+float Dot(Vec2, Vec2);
 
-void InitNucleons();
-void DrawNucleons();
-void ComputeForces();
+void InitNucleons(void);
+void ZeroOutForces(void);
+void ComputeForces(void);
+void UpdatePositions(float);
+void DrawNucleons(void);
 
 
 // --- ENTRY POINT ------------>
@@ -59,7 +61,9 @@ int main(void)
 	{
 		BeginDrawing();
 			ClearBackground(BLACK);
+			ZeroOutForces();
 			ComputeForces();
+			UpdatePositions(GetFrameTime());
 			DrawNucleons();
 		EndDrawing();
 	}
@@ -82,10 +86,10 @@ Vec2 Subtract(Vec2 a, Vec2 b)
 
 float Dot(Vec2 a, Vec2 b)
 {
-    return a.x * a.x + a.y * a.y;
+    return a.x * b.x + a.y * b.y;
 }
 
-void InitNucleons()
+void InitNucleons(void)
 {
 	for (int i = 0; i < NUM_NUCLEONS; i++)
 	{
@@ -100,17 +104,12 @@ void InitNucleons()
 	}
 }
 
-void DrawNucleons()
+void ZeroOutForces(void)
 {
-	Color color;
-	for (int i = 0; i < NUM_NUCLEONS; i++)
-	{
-		color = nucleons[i].charge == CHARGE_POSITIVE ? BLUE : RED;
-		DrawCircle(nucleons[i].position.x, nucleons[i].position.y, nucleons[i].radius, color);
-	}
+	for (int i = 0; i < NUM_NUCLEONS; i++) nucleons[i].force = (Vec2){0, 0};
 }
 
-void ComputeForces()
+void ComputeForces(void)
 {
 	Nucleon *self, *other;
 
@@ -136,5 +135,27 @@ void ComputeForces()
 			other->force.x -= coulomb * normal.x;
 			other->force.y -= coulomb * normal.y;
 		}
+	}
+}
+
+void UpdatePositions(float dt)
+{
+	for (int i = 0; i < NUM_NUCLEONS; i++)
+	{
+		nucleons[i].velocity.x += nucleons[i].force.x * dt;
+		nucleons[i].velocity.y += nucleons[i].force.y * dt;
+
+		nucleons[i].position.x += nucleons[i].velocity.x * dt;
+		nucleons[i].position.y += nucleons[i].velocity.y * dt;
+	}
+}
+
+void DrawNucleons(void)
+{
+	Color color;
+	for (int i = 0; i < NUM_NUCLEONS; i++)
+	{
+		color = nucleons[i].charge == CHARGE_POSITIVE ? BLUE : RED;
+		DrawCircle(nucleons[i].position.x, nucleons[i].position.y, nucleons[i].radius, color);
 	}
 }
