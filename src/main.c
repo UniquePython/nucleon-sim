@@ -9,7 +9,7 @@
 #define WIDTH 900
 #define HEIGHT 600
 #define FPS 60
-#define RADIUS 10
+#define RADIUS 5
 #define NUM_NUCLEONS 30
 #define SPEED 20
 
@@ -37,6 +37,7 @@ typedef struct s_nucleon
 // --- PROTOTYPES ------------>
 
 void InitNucleons();
+void DrawNucleons();
 
 
 // --- ENTRY POINT ------------>
@@ -54,6 +55,7 @@ int main(void)
 	{
 		BeginDrawing();
 			ClearBackground(BLACK);
+			DrawNucleons();
 		EndDrawing();
 	}
 	
@@ -77,5 +79,15 @@ void InitNucleons()
 		nucleons[i].force.x = 0;
 		nucleons[i].force.y = 0;
 		nucleons[i].charge = CHARGE_POSITIVE;
+	}
+}
+
+void DrawNucleons()
+{
+	Color color;
+	for (int i = 0; i < NUM_NUCLEONS; i++)
+	{
+		color = nucleons[i].charge == CHARGE_POSITIVE ? BLUE : RED;
+		DrawCircle(nucleons[i].position.x, nucleons[i].position.y, nucleons[i].radius, color);
 	}
 }
