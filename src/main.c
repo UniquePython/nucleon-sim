@@ -32,6 +32,7 @@ typedef struct s_nucleon
 	Vec2 position, velocity, force;
 	float radius;
 	Charge charge;
+	float mass;
 } Nucleon;
 
 
@@ -119,6 +120,21 @@ void InitNucleons(void)
 				nucleons[i].charge = CHARGE_POSITIVE;
 				break;
 		}
+
+		switch (nucleons[i].charge)
+		{
+			case CHARGE_NEGATIVE:
+				nucleons[i].mass = 1;
+				break;
+			
+			case CHARGE_NEUTRAL:
+				nucleons[i].mass = 1838;
+				break;
+			
+			case CHARGE_POSITIVE:
+				nucleons[i].mass = 1836;
+				break;
+		}
 	}
 }
 
@@ -160,8 +176,8 @@ void UpdatePositions(float dt)
 {
 	for (int i = 0; i < NUM_NUCLEONS; i++)
 	{
-		nucleons[i].velocity.x += nucleons[i].force.x * dt;
-		nucleons[i].velocity.y += nucleons[i].force.y * dt;
+		nucleons[i].velocity.x += (nucleons[i].force.x / nucleons[i].mass) * dt;
+		nucleons[i].velocity.y += (nucleons[i].force.y / nucleons[i].mass) * dt;
 
 		nucleons[i].position.x += nucleons[i].velocity.x * dt;
 		nucleons[i].position.y += nucleons[i].velocity.y * dt;
